@@ -5,6 +5,11 @@ import * as Font from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import React, { useEffect, useCallback, useState } from "react";
+import { ApolloProvider, useReactiveVar } from "@apollo/client";
+import client, { isLoggedInVar, tokenVar, usernameVar } from "./apollo";
+import Tabs from "./Navigators/Tabs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationContainer } from "@react-navigation/native";
 
 const loadFonts = (fonts) => fonts.map((font) => Font.loadAsync(font));
 const loadImages = (images) =>
@@ -30,6 +35,14 @@ export default function App() {
         // await Asset.loadAsync(require('./1600x800_1.jpeg'));
         // await Image.prefetch("https://reactnative.dev/docs/assets/GettingStartedCongratulations.png")
 
+        const token = await AsyncStorage.getItem("token");
+        const username = await AsyncStorage.getItem("username");
+        if (token) {
+          tokenVar(token);
+          usernameVar(username);
+          isLoggedInVar(true);
+        }
+
         await Promise.all([...fonts, ...images]);
       } catch (e) {
         console.warn(e);
@@ -52,12 +65,10 @@ export default function App() {
   }
 
   return (
-    <View
-      onLayout={onLayoutRootView}
-      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-    >
-      <Text>Nomad Coffee</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ApolloProvider client={client}>
+      <NavigationContainer onLayout={onLayoutRootView}>
+        <Tabs />
+      </NavigationContainer>
+    </ApolloProvider>
   );
 }
