@@ -1,61 +1,84 @@
-import { View, Text, ScrollView } from "react-native";
+import { FlatList, RefreshControl } from "react-native";
 import { gql, useQuery } from "@apollo/client";
 import { useState } from "react";
 import CoffeeBox from "../components/CoffeeBox";
 
 export const COFFEESHOPS_QUERY = gql`
-  query SeeCoffeeShops($page: Int!) {
-    seeCoffeeShops(page: $page) {
-      error
-      totalPages
-      coffeeShops {
-        name
-        photos {
-          id
-          url
-        }
+  query SeeCoffeeShopsFeed($offset: Int!) {
+    seeCoffeeShopsFeed(offset: $offset) {
+      id
+      name
+      categories {
         id
-        categories {
-          id
-          name
-        }
-        user {
-          id
-          name
-        }
+        name
+      }
+      photos {
+        id
+        url
+      }
+      user {
+        id
+        name
       }
     }
   }
 `;
 
 export default function Home({ navigation }) {
-  const [page, setPage] = useState(1);
-  const { loading, error, data } = useQuery(COFFEESHOPS_QUERY, {
-    variables: { page: page },
+  const [refreshing, setRefreshing] = useState(false);
+  const { loading, data, refetch, fetchMore } = useQuery(COFFEESHOPS_QUERY, {
+    variables: { offset: 0 },
   });
 
   let coffeeShops = [];
   if (!loading) {
-    coffeeShops = data.seeCoffeeShops.coffeeShops;
-    // coffeeShops = data.seeCoffeeShops;
+    coffeeShops = data.seeCoffeeShopsFeed;
   }
 
+  const renderCoffeeShop = ({ item: coffeeShop }) => {
+    return (
+      <CoffeeBox
+        key={`coffeeShop_${coffeeShop.id}`}
+        coffeeShop={coffeeShop}
+        readMode={0}
+      />
+    );
+  };
+
+  const refresh = async () => {
+    console.log("refresh start");
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
   return (
-    <ScrollView
+    <FlatList
       style={{
         flex: 1,
         backgroundColor: "black",
+        width: "100%",
       }}
-    >
-      {!loading
-        ? coffeeShops.map((coffeeShop) => (
-            <CoffeeBox
-              key={`coffeeShop_${coffeeShop.id}`}
-              coffeeShop={coffeeShop}
-              readMode={0}
-            />
-          ))
-        : null}
-    </ScrollView>
+      onEndReachedThreshold={0.05}
+      onEndReached={() =>
+        fetchMore({
+          variables: {
+            offset: coffeeShops?.length,
+          },
+        })
+      }
+      refreshControl={
+        <RefreshControl
+          isRefreshing={refreshing}
+          onRefresh={refreshing}
+          colors={["white"]} // for android
+          tintColor={"white"} // for ios
+        />
+      }
+      showsVerticalScrollIndicator={false}
+      data={coffeeShops}
+      keyExtractor={(item) => item.id}
+      renderItem={renderCoffeeShop}
+    ></FlatList>
   );
 }

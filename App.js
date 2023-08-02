@@ -6,10 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { Asset } from "expo-asset";
 import React, { useEffect, useCallback, useState } from "react";
 import { ApolloProvider, useReactiveVar } from "@apollo/client";
-import client, { isLoggedInVar, tokenVar, usernameVar } from "./apollo";
+import client, { isLoggedInVar, tokenVar, usernameVar, cache } from "./apollo";
 import Tabs from "./Navigators/Tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
+import { persistCache, AsyncStorageWrapper } from "apollo3-cache-persist";
 
 const loadFonts = (fonts) => fonts.map((font) => Font.loadAsync(font));
 const loadImages = (images) =>
@@ -42,6 +43,11 @@ export default function App() {
           usernameVar(username);
           isLoggedInVar(true);
         }
+
+        await persistCache({
+          cache,
+          storage: new AsyncStorageWrapper(AsyncStorage),
+        });
 
         await Promise.all([...fonts, ...images]);
       } catch (e) {

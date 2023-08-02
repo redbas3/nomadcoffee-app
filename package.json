@@ -28,7 +28,8 @@
     "styled-components": "^6.0.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "apollo3-cache-persist": "^0.14.1"
   },
   "private": true
 }
